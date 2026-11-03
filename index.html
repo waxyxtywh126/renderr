@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Studio Gerak Render</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eef1f4;--pn:#fff;--ln:#d3dae2;--tx:#12171d;--mu:#5d6977;--ac:#1f6feb;--ac2:#fff;--er:#c62828;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1318;--pn:#171d24;--ln:#2a323c;--tx:#e8edf2;--mu:#93a0af;--ac:#4d9dff;--ac2:#06101c;--er:#ff8a80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1318;--pn:#171d24;--ln:#2a323c;--tx:#e8edf2;--mu:#93a0af;--ac:#4d9dff;--ac2:#06101c;--er:#ff8a80;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;min-height:100%}
+main{max-width:640px;margin:0 auto;padding:18px 16px 40px}
+h1{font-size:24px;margin:0 0 2px;letter-spacing:-.01em}
+p.s{margin:0 0 16px;color:var(--mu);font-size:14px}
+.box{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:12px}
+.stage{display:flex;justify-content:center;background:#000;border-radius:6px;overflow:hidden}
+canvas{display:block;max-width:100%;max-height:52vh;width:auto;height:auto;background:#000}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.row>*{flex:1 1 120px}
+label{font-size:13px;color:var(--mu);display:block;margin-bottom:3px}
+select,input[type=number],textarea{width:100%;box-sizing:border-box;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:6px;padding:9px;font:inherit}
+textarea{font:13px/1.4 ui-monospace,Menlo,monospace;min-height:220px;resize:vertical;white-space:pre;overflow:auto}
+button,.btn{appearance:none;border:1px solid var(--ln);background:var(--pn);color:var(--tx);border-radius:6px;padding:11px 12px;font:600 15px inherit;font-family:inherit;text-align:center;text-decoration:none;display:block;box-sizing:border-box}
+button.p{background:var(--ac);color:var(--ac2);border-color:var(--ac)}
+button:disabled{opacity:.5}
+input[type=file]{width:100%;font-size:14px;color:var(--mu)}
+.bar{height:6px;background:var(--ln);border-radius:3px;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ac)}
+#msg{font-size:14px;color:var(--mu);margin-top:8px;min-height:20px}
+#err{color:var(--er);font-size:14px;margin-top:8px;white-space:pre-wrap}
+video{width:100%;max-height:60vh;background:#000;border-radius:6px}
+.hid{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>Studio Gerak Render</h1>
+<p class="s">Tempel kode animasi dari Claude Code, lalu rekam jadi video yang bisa diunduh di Safari.</p>
+
+<div class="box">
+<div class="stage"><canvas id="cv" width="720" height="1280"></canvas></div>
+<div class="row">
+<div><label for="fmt">Format</label><select id="fmt">
+<option value="720x1280">9:16 hemat (720×1280)</option>
+<option value="1080x1920">9:16 HD (1080×1920)</option>
+<option value="1280x720">16:9 (1280×720)</option></select></div>
+<div><label for="dur">Durasi (detik, maks 60)</label><input id="dur" type="number" min="1" max="60" value="6" inputmode="numeric"></div>
+</div>
+<div style="margin-top:10px"><label for="aud">Suara narasi atau musik (opsional)</label><input id="aud" type="file" accept="audio/*"></div>
+<div class="row">
+<button id="pv">Pratinjau</button>
+<button id="rc" class="p">Rekam dan ekspor</button>
+</div>
+<div class="bar"><i id="pb"></i></div>
+<div id="msg"></div>
+<div id="err"></div>
+</div>
+
+<div id="out" class="box hid">
+<video id="vd" controls playsinline></video>
+<div class="row">
+<a id="dl" class="btn p">Unduh video</a>
+<button id="sh" class="hid">Bagikan atau simpan ke Foto</button>
+</div>
+<div id="fi" style="font-size:13px;color:var(--mu);margin-top:8px"></div>
+</div>
+
+<div class="box">
+<label for="code">Kode animasi (JavaScript, fungsi draw)</label>
+<textarea id="code" spellcheck="false" autocapitalize="off" autocorrect="off">// Kontrak: function draw(ctx, t, W, H)
+// t = waktu dalam detik, W dan H = ukuran kanvas
+const ease = x => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
+function draw(ctx, t, W, H) {
+  const s = Math.min(W, H) / 720;
+  ctx.fillStyle = '#f6f1e7'; ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const a = ease(t / 0.8), dy = (1 - a) * 40 * s;
+  ctx.globalAlpha = a;
+  ctx.font = '800 ' + (72 * s) + 'px system-ui';
+  ctx.fillStyle = '#1b1b1b'; ctx.fillText('Dari Kode', W / 2, H * 0.28 + dy);
+  ctx.fillStyle = '#e0302b'; ctx.fillText('Jadi Video', W / 2, H * 0.28 + 90 * s + dy);
+  ctx.globalAlpha = 1;
+  const p = ease((t - 1) / 1.5), cy = H * 0.55, r = 140 * s;
+  ctx.lineWidth = 28 * s; ctx.lineCap = 'round';
+  ctx.strokeStyle = '#ddd5c4'; ctx.beginPath(); ctx.arc(W / 2, cy, r, 0, 7); ctx.stroke();
+  ctx.strokeStyle = '#e0302b'; ctx.beginPath();
+  ctx.arc(W / 2, cy, r, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 1.6); ctx.stroke();
+  ctx.fillStyle = '#1b1b1b'; ctx.font = '800 ' + (80 * s) + 'px system-ui';
+  ctx.fillText(Math.round(p * 80) + '%', W / 2, cy);
+  const b = ease((t - 2.2) / 0.5);
+  if (b > 0) {
+    ctx.save(); ctx.translate(W / 2, H * 0.75); ctx.scale(b, b);
+    ctx.fillStyle = '#ffd400'; ctx.fillRect(-170 * s, -34 * s, 340 * s, 68 * s);
+    ctx.fillStyle = '#1b1b1b'; ctx.font = '700 ' + (34 * s) + 'px system-ui';
+    ctx.fillText('Data naik 80%', 0, 0); ctx.restore();
+  }
+  const w = 560 * s, h = 70 * s, x = W / 2 - w / 2, y = H * 0.88 - h / 2;
+  ctx.fillStyle = 'rgba(20,20,20,.85)'; ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, h / 2); else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '600 ' + (32 * s) + 'px system-ui';
+  ctx.fillText('Kode dari Claude Code, jadi video', W / 2, H * 0.88);
+}
+</textarea>
+<div class="row">
+<div><label for="fl">Muat dari file (.js, .txt, .html)</label><input id="fl" type="file" accept=".js,.txt,.html,text/*"></div>
+</div>
+<div class="row"><button id="cp">Salin prompt untuk Claude Code</button></div>
+</div>
+</main>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var cv=$('cv'),ctx=cv.getContext('2d'),fn=null,raf=0,busy=false,audioData=null,lastUrl=null;
+
+function err(m){$('err').textContent=m||''}
+function msg(m){$('msg').textContent=m||''}
+function dur(){return Math.min(60,Math.max(1,+$('dur').value||6))}
+function setSize(){
+  var p=$('fmt').value.split('x');cv.width=+p[0];cv.height=+p[1];
+  if(compile())frame(0);
+}
+function compile(){
+  var src=$('code').value;
+  var m=src.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+  if(m)src=m[1];
+  try{
+    var f=new Function(src+'\n;return typeof draw==="function"?draw:null;')();
+    if(!f)throw new Error('Fungsi draw(ctx, t, W, H) tidak ditemukan di kode.');
+    fn=f;err('');return true;
+  }catch(e){fn=null;err('Kode bermasalah: '+e.message);return false}
+}
+function frame(t){
+  ctx.save();
+  try{fn(ctx,t,cv.width,cv.height)}catch(e){err('Error saat menggambar: '+e.message);stopPreview()}
+  ctx.restore();
+}
+function stopPreview(){cancelAnimationFrame(raf);raf=0;$('pv').textContent='Pratinjau'}
+function preview(){
+  if(raf){stopPreview();return}
+  if(!compile())return;
+  $('pv').textContent='Berhenti';
+  var t0=performance.now(),d=dur();
+  (function loop(){
+    var t=((performance.now()-t0)/1000)%d;
+    frame(t);$('pb').style.width=(t/d*100)+'%';
+    raf=requestAnimationFrame(loop);
+  })();
+}
+
+async function record(){
+  if(busy||!compile())return;
+  if(typeof MediaRecorder==='undefined'||!cv.captureStream){err('Browser ini belum mendukung perekaman. Perbarui iOS ke versi terbaru.');return}
+  stopPreview();busy=true;$('rc').disabled=true;$('pv').disabled=true;$('out').classList.add('hid');
+  var d=dur(),lock=null,ac=null,src=null,stream=cv.captureStream(30);
+  try{
+    if(audioData){
+      var AC=window.AudioContext||window.webkitAudioContext;
+      ac=new AC();await ac.resume();
+      var buf=await ac.decodeAudioData(audioData.slice(0));
+      var dest=ac.createMediaStreamDestination();
+      src=ac.createBufferSource();src.buffer=buf;src.connect(dest);
+      dest.stream.getAudioTracks().forEach(function(t){stream.addTrack(t)});
+    }
+    try{if(navigator.wakeLock)lock=await navigator.wakeLock.request('screen')}catch(e){}
+    var types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'];
+    var mt=types.find(function(t){return MediaRecorder.isTypeSupported(t)})||'';
+    var opt={videoBitsPerSecond:6000000};if(mt)opt.mimeType=mt;
+    var mr=new MediaRecorder(stream,opt),chunks=[];
+    mr.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data)};
+    var done=new Promise(function(r){mr.onstop=r});
+    frame(0);mr.start(500);if(src)src.start();
+    var t0=performance.now();
+    await new Promise(function(res){
+      (function loop(){
+        var t=(performance.now()-t0)/1000;
+        frame(Math.min(t,d));
+        $('pb').style.width=Math.min(100,t/d*100)+'%';
+        msg('Merekam '+Math.min(t,d).toFixed(1)+' dari '+d+' detik. Jangan tutup layar atau pindah tab.');
+        if(t>=d)res();else requestAnimationFrame(loop);
+      })();
+    });
+    await new Promise(function(r){setTimeout(r,250)});
+    mr.stop();await done;
+    var type=(mr.mimeType||mt||'video/mp4').split(';')[0];
+    var ext=type.indexOf('mp4')>-1?'mp4':'webm';
+    var blob=new Blob(chunks,{type:type});
+    if(lastUrl)URL.revokeObjectURL(lastUrl);
+    lastUrl=URL.createObjectURL(blob);
+    var name='studio-gerak-'+Date.now()+'.'+ext;
+    $('vd').src=lastUrl;
+    $('dl').href=lastUrl;$('dl').download=name;
+    $('fi').textContent='Format '+ext.toUpperCase()+', '+(blob.size/1048576).toFixed(1)+' MB.'+(ext==='webm'?' WebM kurang cocok di iPhone, buka lewat Safari agar hasilnya MP4.':'');
+    var file=new File([blob],name,{type:type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      $('sh').classList.remove('hid');
+      $('sh').onclick=function(){navigator.share({files:[file]}).catch(function(){})};
+    }
+    $('out').classList.remove('hid');
+    msg('Selesai. Ketuk Unduh video, atau Bagikan lalu pilih Simpan Video.');
+    $('out').scrollIntoView({behavior:'smooth'});
+  }catch(e){err('Gagal merekam: '+e.message);msg('')}
+  finally{
+    if(lock)try{lock.release()}catch(e){}
+    if(ac)try{ac.close()}catch(e){}
+    busy=false;$('rc').disabled=false;$('pv').disabled=false;
+  }
+}
+
+$('fmt').onchange=setSize;
+$('pv').onclick=preview;
+$('rc').onclick=record;
+$('code').oninput=function(){fn=null};
+$('aud').onchange=function(e){
+  var f=e.target.files[0];if(!f){audioData=null;return}
+  var r=new FileReader();r.onload=function(){audioData=r.result;msg('Audio dimuat: '+f.name)};r.readAsArrayBuffer(f);
+};
+$('fl').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();r.onload=function(){$('code').value=r.result;if(compile())frame(0)};r.readAsText(f);
+};
+$('cp').onclick=function(){
+  var t='Buat animasi motion graphic untuk Canvas 2D sebagai satu file JavaScript yang berisi fungsi draw(ctx, t, W, H). t adalah waktu dalam detik, W dan H adalah lebar dan tinggi kanvas (bisa 9:16 atau 16:9), jadi semua ukuran harus relatif terhadap W dan H. Jangan pakai library, gambar eksternal, DOM, atau fetch. Setiap frame harus digambar ulang dari nol berdasarkan t. Durasi: 10 detik. Topik: [isi topikmu]. Gaya: latar krem, judul dengan kata aksen merah, tag callout kuning, subtitle kapsul gelap.';
+  (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){msg('Prompt disalin.')},function(){
+    var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();
+    try{document.execCommand('copy');msg('Prompt disalin.')}catch(e){msg('Salin manual gagal.')}a.remove();
+  });
+};
+setSize();
+})();
+</script>
+</body>
+</html>
